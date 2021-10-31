@@ -15,7 +15,7 @@ class yolo_object_detection():
     __labelsPath = "./yolo-coco_v4/coco.names"
     __weightsPath = "yolo-coco_v4/yolov4.weights"
     __configPath = "yolo-coco_v4/yolov4.cfg"
-    __confidence_setting = 0.2
+    __confidence_setting = 0.3
     __threshold = 0.3
 
 # public
@@ -54,6 +54,7 @@ class yolo_object_detection():
         boxes = []
         confidences = []
         classIDs = []
+        return_bboxes = []
 
         # loop over each of the layer outputs
         for output in layerOutputs:
@@ -75,17 +76,17 @@ class yolo_object_detection():
                     # height
                     box = detection[0:4] * np.array([W, H, W, H])
                     (centerX, centerY, width, height) = box.astype("int")
+                    if width < W/3 and height < H/3:
+                        # use the center (x, y)-coordinates to derive the top
+                        # and and left corner of the bounding box
+                        x = int(centerX - (width / 2))
+                        y = int(centerY - (height / 2))
 
-                    # use the center (x, y)-coordinates to derive the top
-                    # and and left corner of the bounding box
-                    x = int(centerX - (width / 2))
-                    y = int(centerY - (height / 2))
-
-                    # update our list of bounding box coordinates,
-                    # confidences, and class IDs
-                    boxes.append([x, y, int(width), int(height)])
-                    confidences.append(float(confidence))
-                    classIDs.append(classID)
+                        # update our list of bounding box coordinates,
+                        # confidences, and class IDs
+                        boxes.append([x, y, int(width), int(height)])
+                        confidences.append(float(confidence))
+                        classIDs.append(classID)
 
         # apply non-maxima suppression to suppress weak, overlapping
         # bounding boxes
@@ -98,13 +99,14 @@ class yolo_object_detection():
                 # extract the bounding box coordinates
                 (x, y) = (boxes[i][0], boxes[i][1])
                 (w, h) = (boxes[i][2], boxes[i][3])
-                #x = x + int(w/5)
                 # draw a bounding box rectangle and label on the frame
                 if self.__LABELS[classIDs[i]] == specify_obj:
+                    return_bboxes.append(boxes[i])
                     color = [int(c) for c in self.__COLORS[classIDs[i]]]
                     cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                     text = "{}: {:.4f}".format(self.__LABELS[classIDs[i]], confidences[i])
                     cv2.putText(frame, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
         cv2.imwrite("frame.jpg",frame)
+        return return_bboxes
 
