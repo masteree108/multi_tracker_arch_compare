@@ -1,4 +1,4 @@
-import mot_class_arch2 as mtc
+import mot_class_arch1 as mtc
 import os              
 import argparse
 import yolo_object_detection as yolo_obj
@@ -29,5 +29,5 @@ if __name__ == '__main__':
 
     #print(bboxes)
     # load our serialized model from disk                                   
-    mc = mtc.mot_class_arch2(bboxes, frame, resize_width)
+    mc = mtc.mot_class_arch1(bboxes, frame, resize_width)
     mc.tracking(args)

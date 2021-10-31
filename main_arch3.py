@@ -27,7 +27,7 @@ if __name__ == '__main__':
     bboxes = []
     bboxes = yolo.run_detection(frame, 'person')
 
-    print(bboxes)
+    #print(bboxes)
     # load our serialized model from disk                                   
     mc = mtc.mot_class_arch3(bboxes, frame, resize_width)
     mc.tracking(args)

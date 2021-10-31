@@ -171,7 +171,7 @@ class mot_class_arch3():
             #print(bboxes)
             for i,bbox in enumerate(bboxes):
                 for j in range(self.__processor_task_num[i]):
-                    print(bbox[j])
+                    #print(bbox[j])
                     (startX, startY, endX, endY) = bbox[j]
 
                     cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
