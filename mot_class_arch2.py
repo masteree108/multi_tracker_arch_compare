@@ -29,7 +29,6 @@ class mot_class_arch2():
                 "sofa", "train", "tvmonitor"]
     # can not use class video_capture variable, otherwise this process will crash
     #__vs = 0
-    __process_task_num = []
 
     def __get_algorithm_tracker(self, algorithm):
         if algorithm == 'BOOSTING':
@@ -49,35 +48,7 @@ class mot_class_arch2():
         elif algorithm == 'MOSSE':
             tracker = cv2.TrackerMOSSE_create()
         return tracker
-
-    def __assign_amount_of_people_for_tracker(self, detect_people_qty, create_process_qty):
-        # it should brings (left, top, width, height) to tracker.init() function
-        # parameters are left, top , right and bottom in the box 
-        # so those parameters need to minus like below to get width and height 
-        left_num = detect_people_qty % create_process_qty
-        process_num = int(detect_people_qty / create_process_qty)
-        processor_task_num = []                    
-        process_num_ct = 0                         
-        #print("bboxes:")                          
-        #print(bboxes)                             
-        for i in range(create_process_qty):       
-            task_ct = 0                            
-            tracker = cv2.MultiTracker_create()    
-            for j in range(process_num_ct, process_num_ct + process_num):
-                task_ct = task_ct + 1              
-                process_num_ct = process_num_ct + 1
-            processor_task_num.append(task_ct)     
-        if left_num != 0:                          
-            counter = 0                            
-            k = detect_people_qty - create_process_qty * process_num
-            for k in range(k, k+left_num):         
-                #print("k:%d" % k)                 
-                processor_task_num[counter] = processor_task_num[counter] + 1
-                counter = counter + 1       
-        #print("processor_task_number:")    
-        #print(processor_task_num)          
-        return processor_task_num    
-
+    
 # public
     def __init__(self, bboxes, frame, resize_width):
         self.inputQueues = []
@@ -87,14 +58,10 @@ class mot_class_arch2():
         self.__detect_people_qty = len(bboxes)
         create_process_qty = self.__detect_people_qty
 
-        self.__process_task_num  = self.__assign_amount_of_people_for_tracker(self.__detect_people_qty, create_process_qty)
-        
-        ct = 0 
+        bboxes_for_trackers = []
         for i in range(create_process_qty):
             bboxes_for_trackers = []
-            for j in range(int(self.__process_task_num[i])):
-                bboxes_for_trackers.append(bboxes[ct])
-                ct += 1
+            bboxes_for_trackers.append(bboxes[i])
 
             iq = multiprocessing.Queue()
             oq = multiprocessing.Queue()
@@ -108,8 +75,6 @@ class mot_class_arch2():
             processes.start()
 
         print("detect_people_qty: %d" % self.__detect_people_qty) 
-        print("processor_task_num") 
-        print(self.__process_task_num) 
         
         # start the frames per second throughput estimator
         self.__fps = FPS().start()
@@ -117,27 +82,25 @@ class mot_class_arch2():
 
     def start_tracker(self, frame, bboxes, inputQueue, outputQueue):
         #print("start_tracker")
-        tracker = cv2.MultiTracker_create()
+        tracker = cv2.TrackerCSRT_create()
         for i,bbox in enumerate(bboxes):
             mbbox =(bbox[0], bbox[1] , bbox[2], bbox[3])
-            tracker.add(self.__get_algorithm_tracker("CSRT"), frame, mbbox)
+            tracker.init(frame, mbbox)
 
         while True:
-            bboxes_org = []               
-            bboxes_transfer = []          
+            bbox_org = []               
+            bbox_transfer = []          
             frame = inputQueue.get()
             #print("receive frame")
-            ok, bboxes_org = tracker.update(frame)
+            ok, bbox_org = tracker.update(frame)
+            startX = int(bbox_org[0])                                      
+            startY = int(bbox_org[1])      
+            endX = int(bbox_org[0] + bbox_org[2])           
+            endY = int(bbox_org[1] + bbox_org[3])
+            bbox = (startX, startY, endX, endY)   
+            bbox_transfer.append(bbox)
 
-            for box in bboxes_org:        
-                startX = int(box[0])                                      
-                startY = int(box[1])      
-                endX = int(box[0] + box[2])           
-                endY = int(box[1] + box[3])
-                bbox = (startX, startY, endX, endY)   
-                bboxes_transfer.append(bbox)
-
-            outputQueue.put(bboxes_transfer)
+            outputQueue.put(bbox_transfer)
 
     # tracking person on the video
     def tracking(self, args):
@@ -165,15 +128,11 @@ class mot_class_arch2():
             for i,oq in enumerate(self.outputQueues):  
                 bboxes.append(oq.get())
 
-            #print("=====================================")
-            #print(bboxes)
             for i,bbox in enumerate(bboxes):
-                for j in range(self.__process_task_num[i]):
-                    #print(bbox[j])
-                    (startX, startY, endX, endY) = bbox[j]
-
-                    cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
-                    cv2.putText(frame, "person", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+                #print(bbox)
+                (startX, startY, endX, endY) = bbox[0]
+                cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
+                cv2.putText(frame, "person", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
 
             #print("before imshow")
             cv2.imshow("Frame", frame)

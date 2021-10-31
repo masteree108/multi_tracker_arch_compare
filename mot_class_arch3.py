@@ -62,7 +62,6 @@ class mot_class_arch3():
         #print(bboxes)                             
         for i in range(using_processor_qty):       
             task_ct = 0                            
-            tracker = cv2.MultiTracker_create()    
             for j in range(process_num_ct, process_num_ct + process_num):
                 task_ct = task_ct + 1              
                 process_num_ct = process_num_ct + 1
@@ -172,7 +171,7 @@ class mot_class_arch3():
             #print(bboxes)
             for i,bbox in enumerate(bboxes):
                 for j in range(self.__processor_task_num[i]):
-                    #print(bbox[j])
+                    print(bbox[j])
                     (startX, startY, endX, endY) = bbox[j]
 
                     cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
