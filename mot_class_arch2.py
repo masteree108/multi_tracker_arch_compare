@@ -11,24 +11,25 @@ import cv2
 import os
 
 
-class mot_class_arch2(): 
-#private
+class mot_class_arch2():
+    # private
 
     # for saving tracker objects
     # detected flag
     __detection_ok = False
     # if below variable set to True, this result will not show tracking bbox on the video
     # ,it will show number on the terminal
-    __frame_size_width = 1280
+    __frame_size_width = 3840
     __detect_people_qty = 0
 
     # initialize the list of class labels MobileNet SSD was trained to detect
     __CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
-                "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-                "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-                "sofa", "train", "tvmonitor"]
+                 "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+                 "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+                 "sofa", "train", "tvmonitor"]
+
     # can not use class video_capture variable, otherwise this process will crash
-    #__vs = 0
+    # __vs = 0
 
     def __get_algorithm_tracker(self, algorithm):
         if algorithm == 'BOOSTING':
@@ -48,8 +49,8 @@ class mot_class_arch2():
         elif algorithm == 'MOSSE':
             tracker = cv2.TrackerMOSSE_create()
         return tracker
-    
-# public
+
+    # public
     def __init__(self, bboxes, frame, resize_width):
         self.inputQueues = []
         self.outputQueues = []
@@ -69,35 +70,35 @@ class mot_class_arch2():
             self.outputQueues.append(oq)
 
             processes = multiprocessing.Process(
-                        target = self.start_tracker,
-                        args = (frame, bboxes_for_trackers, iq, oq))
+                target=self.start_tracker,
+                args=(frame, bboxes_for_trackers, iq, oq))
             processes.daemon = True
             processes.start()
 
-        print("detect_people_qty: %d" % self.__detect_people_qty) 
-        
+        print("detect_people_qty: %d" % self.__detect_people_qty)
+
         # start the frames per second throughput estimator
         self.__fps = FPS().start()
-        self.__now_frame = frame 
+        self.__now_frame = frame
 
     def start_tracker(self, frame, bboxes, inputQueue, outputQueue):
-        #print("start_tracker")
+        # print("start_tracker")
         tracker = cv2.TrackerCSRT_create()
-        for i,bbox in enumerate(bboxes):
-            mbbox =(bbox[0], bbox[1] , bbox[2], bbox[3])
+        for i, bbox in enumerate(bboxes):
+            mbbox = (bbox[0], bbox[1], bbox[2], bbox[3])
             tracker.init(frame, mbbox)
 
         while True:
-            bbox_org = []               
-            bbox_transfer = []          
+            bbox_org = []
+            bbox_transfer = []
             frame = inputQueue.get()
-            #print("receive frame")
+            # print("receive frame")
             ok, bbox_org = tracker.update(frame)
-            startX = int(bbox_org[0])                                      
-            startY = int(bbox_org[1])      
-            endX = int(bbox_org[0] + bbox_org[2])           
+            startX = int(bbox_org[0])
+            startY = int(bbox_org[1])
+            endX = int(bbox_org[0] + bbox_org[2])
             endY = int(bbox_org[1] + bbox_org[3])
-            bbox = (startX, startY, endX, endY)   
+            bbox = (startX, startY, endX, endY)
             bbox_transfer.append(bbox)
 
             outputQueue.put(bbox_transfer)
@@ -105,40 +106,40 @@ class mot_class_arch2():
     # tracking person on the video
     def tracking(self, args):
         vs = cv2.VideoCapture(args["video"])
-        #print("tracking")
+        # print("tracking")
         # loop over frames from the video file stream
         while True:
-            
-	    # grab the next frame from the video file
+
+            # grab the next frame from the video file
             if self.__detection_ok == True:
                 (grabbed, frame) = vs.read()
-                #print("vs read ok")
-	        # check to see if we have reached the end of the video file
+                # print("vs read ok")
+                # check to see if we have reached the end of the video file
                 if frame is None:
                     break
             else:
                 frame = self.__now_frame
                 self.__detection_ok = True
-        
-            frame = imutils.resize(frame, width=self.__frame_size_width)
-            for i,iq in enumerate(self.inputQueues):
+
+            for i, iq in enumerate(self.inputQueues):
                 iq.put(frame)
 
             bboxes = []
-            for i,oq in enumerate(self.outputQueues):  
+            for i, oq in enumerate(self.outputQueues):
                 bboxes.append(oq.get())
 
-            for i,bbox in enumerate(bboxes):
-                #print(bbox)
+            for i, bbox in enumerate(bboxes):
+                # print(bbox)
                 (startX, startY, endX, endY) = bbox[0]
-                cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
                 cv2.putText(frame, "person", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
 
-            #print("before imshow")
+            # print("before imshow")
+            frame = imutils.resize(frame, 1280)
             cv2.imshow("Frame", frame)
             key = cv2.waitKey(1) & 0xFF
 
-            #if the `q` key was pressed, break from the loop
+            # if the `q` key was pressed, break from the loop
             if key == ord("q"):
                 break
 
@@ -153,4 +154,3 @@ class mot_class_arch2():
         # do a bit of cleanup
         cv2.destroyAllWindows()
         vs.release()
-

@@ -11,24 +11,24 @@ import cv2
 import os
 
 
-class mot_class_arch1(): 
-#private
+class mot_class_arch1():
+    # private
 
     # for saving tracker objects
     # detected flag
     __detection_ok = False
     # if below variable set to True, this result will not show tracking bbox on the video
     # ,it will show number on the terminal
-    __frame_size_width = 1280
+    __frame_size_width = 3840
     __detect_people_qty = 0
 
     # initialize the list of class labels MobileNet SSD was trained to detect
     __CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
-                "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-                "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-                "sofa", "train", "tvmonitor"]
+                 "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+                 "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+                 "sofa", "train", "tvmonitor"]
     # can not use class video_capture variable, otherwise this process will crash
-    #__vs = 0
+    # __vs = 0
     __processor_task_num = []
 
     def __get_algorithm_tracker(self, algorithm):
@@ -50,58 +50,59 @@ class mot_class_arch1():
             tracker = cv2.TrackerMOSSE_create()
         return tracker
 
-# public
+    # public
     def __init__(self, bboxes, frame, resize_width):
 
         self.__frame_size_width = resize_width
         self.__detect_people_qty = len(bboxes)
-        print("detect_people_qty: %d" % self.__detect_people_qty) 
+        print("detect_people_qty: %d" % self.__detect_people_qty)
         self.__tracker = cv2.MultiTracker_create()
-        for i,bbox in enumerate(bboxes):
-            mbbox =(bbox[0], bbox[1] , bbox[2], bbox[3])
+        for i, bbox in enumerate(bboxes):
+            mbbox = (bbox[0], bbox[1], bbox[2], bbox[3])
             self.__tracker.add(self.__get_algorithm_tracker("CSRT"), frame, mbbox)
 
         # start the frames per second throughput estimator
         self.__fps = FPS().start()
-        self.__now_frame = frame 
-    
-    # tracking person on the video
+        self.__now_frame = frame
+
+        # tracking person on the video
+
     def tracking(self, args):
         vs = cv2.VideoCapture(args["video"])
-        #print("tracking")
+        # print("tracking")
         # loop over frames from the video file stream
         while True:
-            
-	    # grab the next frame from the video file
+
+            # grab the next frame from the video file
             if self.__detection_ok == True:
                 (grabbed, frame) = vs.read()
-                #print("vs read ok")
-	        # check to see if we have reached the end of the video file
+                # print("vs read ok")
+                # check to see if we have reached the end of the video file
                 if frame is None:
                     break
             else:
                 frame = self.__now_frame
                 self.__detection_ok = True
 
-            frame = imutils.resize(frame, width=self.__frame_size_width)
             bboxes = []
             ok, bboxes = self.__tracker.update(frame)
-            #print(bboxes)
+            # print(bboxes)
 
-            for i,bbox in enumerate(bboxes):
-                #print(bbox)
+            for i, bbox in enumerate(bboxes):
+                # print(bbox)
                 startX = int(bbox[0])
                 startY = int(bbox[1])
                 endX = int(bbox[0] + bbox[2])
                 endY = int(bbox[1] + bbox[3])
 
-                cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
                 cv2.putText(frame, "person", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
-            #print("before imshow")
+            # print("before imshow")
+            frame = imutils.resize(frame, 1280)
             cv2.imshow("Frame", frame)
             key = cv2.waitKey(1) & 0xFF
 
-            #if the `q` key was pressed, break from the loop
+            # if the `q` key was pressed, break from the loop
             if key == ord("q"):
                 break
 
@@ -116,4 +117,3 @@ class mot_class_arch1():
         # do a bit of cleanup
         cv2.destroyAllWindows()
         vs.release()
-
