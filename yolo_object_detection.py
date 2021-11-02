@@ -45,14 +45,16 @@ class yolo_object_detection():
         return_bboxes = []
         confidences = []
         classIDs = []
-        crop_width = 960
-        crop_high = 540
+        crop_width = 1920
+        crop_high = 1080
         crop_switch = True
         # Add a switch to decide whether to cutout pictures to improve YOLO
+        # Each time crop a 1920*1080 from frame to YOLO
+        # Overlap 50%
         if crop_switch==True:
             if crop_switch:
-                for crop_x in range(0, 3456, 576):
-                    for crop_y in range(0, 1944, 324):
+                for crop_x in range(0, 2840, 960):
+                    for crop_y in range(0, 1620, 540):
                         crop_img = frame[crop_y:crop_y + crop_high, crop_x:crop_x + crop_width]
                         blob = cv2.dnn.blobFromImage(crop_img, 1 / 255.0, (416, 416),
                                                      swapRB=True, crop=False)
