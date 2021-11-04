@@ -52,6 +52,9 @@ class mot_class_arch2():
 
     # public
     def __init__(self, bboxes, frame, resize_width):
+        # start the frames per second throughput estimator
+        self.__fps = FPS().start()
+
         self.inputQueues = []
         self.outputQueues = []
 
@@ -77,8 +80,6 @@ class mot_class_arch2():
 
         print("detect_people_qty: %d" % self.__detect_people_qty)
 
-        # start the frames per second throughput estimator
-        self.__fps = FPS().start()
         self.__now_frame = frame
 
     def start_tracker(self, frame, bboxes, inputQueue, outputQueue):

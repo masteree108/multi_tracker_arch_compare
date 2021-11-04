@@ -79,6 +79,9 @@ class mot_class_arch3():
 
     # public
     def __init__(self, bboxes, frame, resize_width):
+        # start the frames per second throughput estimator
+        self.__fps = FPS().start()
+
         self.inputQueues = []
         self.outputQueues = []
 
@@ -114,8 +117,6 @@ class mot_class_arch3():
         print("processor_task_num")
         print(self.__processor_task_num)
 
-        # start the frames per second throughput estimator
-        self.__fps = FPS().start()
         self.__now_frame = frame
 
     def start_tracker(self, frame, bboxes, inputQueue, outputQueue):

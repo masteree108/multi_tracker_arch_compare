@@ -52,6 +52,8 @@ class mot_class_arch1():
 
     # public
     def __init__(self, bboxes, frame, resize_width):
+        # start the frames per second throughput estimator
+        self.__fps = FPS().start()
 
         self.__frame_size_width = resize_width
         self.__detect_people_qty = len(bboxes)
@@ -61,10 +63,8 @@ class mot_class_arch1():
             mbbox = (bbox[0], bbox[1], bbox[2], bbox[3])
             self.__tracker.add(self.__get_algorithm_tracker("CSRT"), frame, mbbox)
 
-        # start the frames per second throughput estimator
-        self.__fps = FPS().start()
+        
         self.__now_frame = frame
-
         # tracking person on the video
 
     def tracking(self, args):
