@@ -4,7 +4,7 @@ import argparse
 import yolo_object_detection as yolo_obj
 import cv2
 import imutils
-
+from imutils.video import FPS
 
 def read_user_input_info():
     ap = argparse.ArgumentParser()
@@ -23,10 +23,13 @@ if __name__ == '__main__':
     frame = imutils.resize(frame, width=resize_width)
     (h, w) = frame.shape[:2]
 
-    yolo = yolo_obj.yolo_object_detection()
+    fps = FPS().start()
+    yolo = yolo_obj.yolo_object_detection('person')
     bboxes = []
-    bboxes = yolo.run_detection(frame, 'person')
-
+    bboxes = yolo.run_detection(frame)
+    fps.stop()
+    print("[INFO] yolo elapsed time: {:.2f}".format(fps.elapsed()))
+    
     #print(bboxes)
     # load our serialized model from disk                                   
     mc = mtc.mot_class_arch1(bboxes, frame, resize_width)
