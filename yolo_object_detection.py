@@ -76,7 +76,6 @@ class yolo_object_detection():
             self.inputQueues.append(iq)
             self.outputQueues.append(oq)
 
-            net = cv2.dnn.readNetFromDarknet(self.__configPath, self.__weightsPath)
             '''
             input_data = []
             input_data.append(self.__cutout_frame_list[i])
@@ -91,13 +90,13 @@ class yolo_object_detection():
             '''
             processes = multiprocessing.Process(
                             target = self.yolo_detection,
-                            args = (self.__cutout_frame_list[i], net, self.__target_label, \
+                            args = (self.__cutout_frame_list[i], self.__configPath, self.__weightsPath, self.__target_label, \
                                     self.__LABELS, self.__COLORS, self.__confidence_setting, self.__threshold, self.__start_position[i], iq, oq))
                             #args = (input_data))
             processes.daemon = True
             processes.start() 
 
-    def yolo_detection(self, frame, net ,target_label, LABELS, COLORS , \
+    def yolo_detection(self, frame, configPath, weightsPath, target_label, LABELS, COLORS , \
                         confidence_setting, threshold, start_position, inputQueue, outputQueue):
         '''
         def yolo_detection(self, input_data):
@@ -119,6 +118,8 @@ class yolo_object_detection():
         classIDs = []
         crop_width = 1920
         crop_high = 1080
+ 
+        net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
 
         # determine only the *output* layer names that we need from YOLO
         ln = net.getLayerNames()
