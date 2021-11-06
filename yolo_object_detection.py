@@ -71,9 +71,7 @@ class yolo_object_detection():
         # derive the paths to the YOLO weights and model configuration
         # load our YOLO object detector trained on COCO dataset (80 classes)
         for i in range(self.__total_detection_img):
-            iq = multiprocessing.Queue()
             oq = multiprocessing.Queue()
-            self.inputQueues.append(iq)
             self.outputQueues.append(oq)
 
             '''
@@ -91,13 +89,13 @@ class yolo_object_detection():
             processes = multiprocessing.Process(
                             target = self.yolo_detection,
                             args = (self.__cutout_frame_list[i], self.__configPath, self.__weightsPath, self.__target_label, \
-                                    self.__LABELS, self.__COLORS, self.__confidence_setting, self.__threshold, self.__start_position[i], iq, oq))
+                                    self.__LABELS, self.__COLORS, self.__confidence_setting, self.__threshold, self.__start_position[i], oq))
                             #args = (input_data))
             processes.daemon = True
             processes.start() 
 
     def yolo_detection(self, frame, configPath, weightsPath, target_label, LABELS, COLORS , \
-                        confidence_setting, threshold, start_position, inputQueue, outputQueue):
+                        confidence_setting, threshold, start_position, outputQueue):
         '''
         def yolo_detection(self, input_data):
         frame = input_data[0]
@@ -190,10 +188,6 @@ class yolo_object_detection():
                     #cv2.putText(frame, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
         outputQueue.put(return_bboxes)
-        while True:
-            exit = inputQueue.get()
-            if exit == 1:
-                break
 
     def run_multi_core_detection(self, frame):
         get_bboxes = []
@@ -204,9 +198,6 @@ class yolo_object_detection():
 
         #print(" ======== get_bboxes =========")
         #print(get_bboxes)
-        # exit detection each process
-        for i,iq in enumerate(self.inputQueues):      
-            iq.put(1)
 
         return_bboxes = []
         for i in range(len(get_bboxes)):
