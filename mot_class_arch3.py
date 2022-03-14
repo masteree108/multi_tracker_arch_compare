@@ -9,7 +9,8 @@ import argparse
 import imutils
 import cv2
 import os
-
+import datetime
+import time
 
 class mot_class_arch3():
     # private
@@ -85,7 +86,7 @@ class mot_class_arch3():
         self.inputQueues = []
         self.outputQueues = []
 
-        self.__frame_size_width = resize_width
+        #self.__frame_size_width = resize_width
         self.__detect_people_qty = len(bboxes)
         if self.__detect_people_qty >= (os.cpu_count() - 2):
             using_processor_qty = os.cpu_count() - 2
@@ -95,6 +96,9 @@ class mot_class_arch3():
         self.__processor_task_num = self.__assign_amount_of_people_for_tracker(self.__detect_people_qty,
                                                                                using_processor_qty)
 
+        print("========= start(create tracker process) =============")
+
+        t1 = time.time()
         ct = 0
         for i in range(using_processor_qty):
             bboxes_for_trackers = []
@@ -106,32 +110,66 @@ class mot_class_arch3():
             oq = multiprocessing.Queue()
             self.inputQueues.append(iq)
             self.outputQueues.append(oq)
-
             processes = multiprocessing.Process(
                 target=self.start_tracker,
-                args=(frame, bboxes_for_trackers, iq, oq))
+                args=(frame, bboxes_for_trackers, iq, oq, i))
             processes.daemon = True
             processes.start()
 
-        print("detect_people_qty: %d" % self.__detect_people_qty)
-        print("processor_task_num")
+        t2 = time.time()
+        print("elapsed time:%f" % (t2-t1))
+        print("========= end(create tracker process) =============")
+
+        #print("detect_people_qty: %d" % self.__detect_people_qty)
+        #print("processor_task_num")
         print(self.__processor_task_num)
 
         self.__now_frame = frame
 
-    def start_tracker(self, frame, bboxes, inputQueue, outputQueue):
+    def start_tracker(self, frame, bboxes, inputQueue, outputQueue, num):
         # print("start_tracker")
+        #print("=================")
+        #print(datetime.datetime.now());
         tracker = cv2.MultiTracker_create()
+        #print("==========%d start time" % num)
+        #print(datetime.datetime.now());
+        tt = datetime.datetime.now()
+        #print("pid:%s " % str(os.getpid()) + " " + str(tt))
+        self.num = num 
         for i, bbox in enumerate(bboxes):
+            #print(bboxes)
             mbbox = (bbox[0], bbox[1], bbox[2], bbox[3])
             tracker.add(self.__get_algorithm_tracker("CSRT"), frame, mbbox)
 
         while True:
             bboxes_org = []
             bboxes_transfer = []
+            t1 = 0
+            t2 = 0
+            if self.num == 3:
+                t1 = time.time()
+                #print(str(t1))
+                #print("==========%d receive frame time start" % self.num)
+                #print(datetime.datetime.now())
+                #print("========= queque receive frame start=============")
             frame = inputQueue.get()
+            #if self.num == 2:
+                #t2 = time.time()
+                #print(str(t2))
+                #print("queue receive frame elapsed time:%f" % (t2-t1))
+                #print("========= queue receive frame end=============")
+
+            #if self.num == 2:
+                #print(datetime.datetime.now())
+                #print("==========%d receive frame time over" % self.num)
             # print("receive frame")
+            #if self.num == 2:
+                #t1 = time.time()
             ok, bboxes_org = tracker.update(frame)
+
+            #if self.num == 2:
+                #t2 = time.time()
+                #print("tracking time:%f" % (t2-t1))
 
             for box in bboxes_org:
                 startX = int(box[0])
@@ -141,13 +179,33 @@ class mot_class_arch3():
                 bbox = (startX, startY, endX, endY)
                 bboxes_transfer.append(bbox)
 
+            #if self.num == 2:
+                #print("==========%d transmit frame time start" % self.num)
+                #print(datetime.datetime.now())
             outputQueue.put(bboxes_transfer)
+            #if self.num == 2:
+                #t2 = time.time()
+                #print("tracing+other elapsed time:%f" % (t2-t1))
+
+            #if self.num == 2:
+                #print(datetime.datetime.now())
+                #print("==========%d transmit frame time over" % self.num)
+
+            ##tt = datetime.datetime.now()
+            #print("exit pid:%s " % str(os.getpid()) + " " + str(tt))
+            if self.num == 3:
+                t2 = time.time()
+                #print(str(t2))
+                print("process3 elapsed time:%f" % (t2-t1))
+
 
     # tracking person on the video
     def tracking(self, args):
         vs = cv2.VideoCapture(args["video"])
         # print("tracking")
         # loop over frames from the video file stream
+        #t1 = time.time()
+
         while True:
 
             # grab the next frame from the video file
@@ -165,8 +223,17 @@ class mot_class_arch3():
                 iq.put(frame)
 
             bboxes = []
+
+            
+            #print("===============queue receive bboxes start======================")
+            #print(datetime.datetime.now())
+            #t1 = time.time()
             for i, oq in enumerate(self.outputQueues):
                 bboxes.append(oq.get())
+            #t2 = time.time()
+            #print("queue receive bboxes elapsed time:%f" % (t2-t1))
+            #print(datetime.datetime.now())
+            #print("===============queue receive bboxes end======================")
 
             # print("=====================================")
             # print(bboxes)
@@ -195,6 +262,8 @@ class mot_class_arch3():
         print("[INFO] elapsed time: {:.2f}".format(self.__fps.elapsed()))
         print("[INFO] approx. FPS: {:.2f}".format(self.__fps.fps()))
 
+        #t2 = time.time()
+        #print("main process elapsed time:%f" % (t2-t1))
         # do a bit of cleanup
         cv2.destroyAllWindows()
         vs.release()

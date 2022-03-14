@@ -9,7 +9,7 @@ import argparse
 import imutils
 import cv2
 import os
-
+import datetime
 
 class mot_class_arch1():
     # private
@@ -58,7 +58,16 @@ class mot_class_arch1():
         self.__frame_size_width = resize_width
         self.__detect_people_qty = len(bboxes)
         print("detect_people_qty: %d" % self.__detect_people_qty)
+
+        #fps = FPS().start()
+        print("--------------------------------")
+        print(datetime.datetime.now());
         self.__tracker = cv2.MultiTracker_create()
+        #fps.stop()
+        print(datetime.datetime.now());
+        print("--------------------------------")
+        #print("==========[INFO] create elapsed time: {:.2f}=========".format(fps.elapsed()))
+
         for i, bbox in enumerate(bboxes):
             mbbox = (bbox[0], bbox[1], bbox[2], bbox[3])
             self.__tracker.add(self.__get_algorithm_tracker("CSRT"), frame, mbbox)

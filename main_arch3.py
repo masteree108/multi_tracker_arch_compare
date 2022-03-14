@@ -20,6 +20,7 @@ if __name__ == '__main__':
     args = read_user_input_info()
     vs = cv2.VideoCapture(args["video"])
     (grabbed, frame) = vs.read()
+    cv2.imwrite('first_frame.jpg', frame)
     resize_width = 3840
     frame = imutils.resize(frame, width=resize_width)
     (h, w) = frame.shape[:2]

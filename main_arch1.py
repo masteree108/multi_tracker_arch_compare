@@ -27,6 +27,8 @@ if __name__ == '__main__':
     yolo = yolo_obj.yolo_object_detection('person')
     bboxes = []
     bboxes = yolo.run_detection(frame)
+    #cv2.imwrite('output.jpg', frame)
+
     fps.stop()
     print("[INFO] yolo elapsed time: {:.2f}".format(fps.elapsed()))
     
