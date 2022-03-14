@@ -55,27 +55,20 @@ class mot_class_arch3():
         # it should brings (left, top, width, height) to tracker.init() function
         # parameters are left, top , right and bottom in the box 
         # so those parameters need to minus like below to get width and height 
-        left_num = detect_people_qty % using_processor_qty
+        assign_num = int(detect_people_qty / using_processor_qty)
+        left_num = int(detect_people_qty % using_processor_qty)
         process_num = int(detect_people_qty / using_processor_qty)
         processor_task_num = []
         process_num_ct = 0
         # print("bboxes:")
         # print(bboxes)
         for i in range(using_processor_qty):
-            task_ct = 0
-            for j in range(process_num_ct, process_num_ct + process_num):
-                task_ct = task_ct + 1
-                process_num_ct = process_num_ct + 1
-            processor_task_num.append(task_ct)
+            processor_task_num.append(assign_num)
         if left_num != 0:
-            counter = 0
-            k = detect_people_qty - using_processor_qty * process_num
-            for k in range(k, k + left_num):
-                # print("k:%d" % k)
-                processor_task_num[counter] = processor_task_num[counter] + 1
-                counter = counter + 1
-                # print("processor_task_number:")
-        # print(processor_task_num)
+            for j in range(left_num):
+                processor_task_num[j] = processor_task_num[j] + 1
+        print("processor_task_number:")
+        print(processor_task_num)
         return processor_task_num
 
     # public
@@ -120,7 +113,7 @@ class mot_class_arch3():
         print("elapsed time:%f" % (t2-t1))
         print("========= end(create tracker process) =============")
 
-        #print("detect_people_qty: %d" % self.__detect_people_qty)
+        print("detect_people_qty: %d" % self.__detect_people_qty)
         #print("processor_task_num")
         print(self.__processor_task_num)
 
@@ -144,32 +137,8 @@ class mot_class_arch3():
         while True:
             bboxes_org = []
             bboxes_transfer = []
-            t1 = 0
-            t2 = 0
-            if self.num == 3:
-                t1 = time.time()
-                #print(str(t1))
-                #print("==========%d receive frame time start" % self.num)
-                #print(datetime.datetime.now())
-                #print("========= queque receive frame start=============")
             frame = inputQueue.get()
-            #if self.num == 2:
-                #t2 = time.time()
-                #print(str(t2))
-                #print("queue receive frame elapsed time:%f" % (t2-t1))
-                #print("========= queue receive frame end=============")
-
-            #if self.num == 2:
-                #print(datetime.datetime.now())
-                #print("==========%d receive frame time over" % self.num)
-            # print("receive frame")
-            #if self.num == 2:
-                #t1 = time.time()
             ok, bboxes_org = tracker.update(frame)
-
-            #if self.num == 2:
-                #t2 = time.time()
-                #print("tracking time:%f" % (t2-t1))
 
             for box in bboxes_org:
                 startX = int(box[0])
@@ -179,25 +148,7 @@ class mot_class_arch3():
                 bbox = (startX, startY, endX, endY)
                 bboxes_transfer.append(bbox)
 
-            #if self.num == 2:
-                #print("==========%d transmit frame time start" % self.num)
-                #print(datetime.datetime.now())
             outputQueue.put(bboxes_transfer)
-            #if self.num == 2:
-                #t2 = time.time()
-                #print("tracing+other elapsed time:%f" % (t2-t1))
-
-            #if self.num == 2:
-                #print(datetime.datetime.now())
-                #print("==========%d transmit frame time over" % self.num)
-
-            ##tt = datetime.datetime.now()
-            #print("exit pid:%s " % str(os.getpid()) + " " + str(tt))
-            if self.num == 3:
-                t2 = time.time()
-                #print(str(t2))
-                print("process3 elapsed time:%f" % (t2-t1))
-
 
     # tracking person on the video
     def tracking(self, args):
